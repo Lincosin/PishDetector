@@ -1,110 +1,107 @@
 # PhisDetector
 
-**PhisDetector** adalah tool pendeteksi phishing berbasis analisis URL, dibangun untuk mengidentifikasi tautan berbahaya sebelum diakses pengguna. Proyek ini menggabungkan beberapa teknik deteksi klasik (homograph, punycode/IDN, typosquatting) dengan sistem scoring risiko sederhana.
-
-> Sebelumnya dikenal sebagai **PhishGuard**.
+**PhisDetector** (nama sebelumnya: PhishGuard) adalah CLI tool sederhana untuk mendeteksi indikasi *homograph attack* pada URL — teknik phishing di mana penyerang menggunakan karakter non-ASCII (mis. Cyrillic, Greek, atau karakter IDN lain) yang tampak mirip dengan huruf Latin untuk menyamarkan domain palsu.
 
 ---
 
-## Fitur Utama
+## Fitur
 
-- **Homograph Detection** — mendeteksi karakter yang secara visual mirip (mis. Cyrillic vs Latin) yang sering dipakai untuk menyamarkan domain palsu.
-- **Punycode / IDN Detection** — mengenali domain internationalized (xn--) yang berpotensi disalahgunakan.
-- **Typosquatting Check** — mendeteksi domain yang menyerupai domain populer dengan sedikit perbedaan ejaan.
-- **Risk Scoring System (0–100)** — menggabungkan seluruh sinyal deteksi menjadi satu skor risiko yang mudah diinterpretasikan.
-- **Unit Tested** — 16 unit test untuk memastikan setiap modul deteksi berjalan sesuai ekspektasi.
+- **Validasi URL** — memastikan input berupa URL yang valid sebelum diproses (`validators`).
+- **Ekstraksi Domain** — mengambil domain murni dari URL menggunakan `tldextract`.
+- **Decode Punycode/IDN** — mendekode domain yang dienkode dalam bentuk punycode (`xn--...`) menggunakan `idna`.
+- **Analisis Karakter** — memeriksa setiap karakter dalam domain, menampilkan code point Unicode dan nama resminya.
+- **Deteksi Non-ASCII** — menandai domain sebagai **"Suspicious"** jika mengandung karakter dengan code point di atas 127 (indikasi potensi homograph attack), atau **"Safe"** jika seluruh karakter ASCII standar.
 
 ---
 
 ## Tech Stack
 
 - **Bahasa:** Python
-- **Library:** `unicodedata`, `idna`, `confusable_homoglyphs` (atau library confusables sejenis)
-- **Testing:** `pytest` / `unittest`
-- **Interface saat ini:** CLI (Command Line Interface)
-- **Rencana pengembangan:** REST API dengan **FastAPI**, terintegrasi dengan reputation API pihak ketiga (VirusTotal, Google Safe Browsing)
+- **Library:** `tldextract`, `idna`, `validators`, `unicodedata` (built-in)
+- **Interface:** CLI interaktif
 
 ---
 
 ## Instalasi
 
 ```bash
-# Clone repository
-git clone https://github.com/<username>/phisdetector.git
-cd phisdetector
+git clone https://github.com/Lincosin/PishDetector.git
+cd PishDetector
 
-# (Opsional) buat virtual environment
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 
+pip install tldextract idna validators
 ```
+
+> Catatan: repo belum memiliki `requirements.txt` — silakan buat dari daftar di atas, atau jalankan `pip freeze > requirements.txt` setelah instalasi.
 
 ---
 
 ## Cara Pakai
 
-```bash
-python phisdetector.py --url "http://contoh-domain-mencurigakan.com"
-```
-
-Contoh output:
-
-```
-URL      : http://contoh-domain-mencurigakan.com
-Risk Score : 78/100
-Detected Issues:
-  - Typosquatting terhadap domain populer
-  - Karakter IDN terdeteksi
-Status   :  Berisiko Tinggi
-```
-
-> Sesuaikan nama file, argumen CLI, dan contoh output di atas dengan implementasi aktual kamu.
-
----
-
-## Menjalankan Test
+Jalankan langsung, lalu masukkan URL saat diminta:
 
 ```bash
-pytest tests/
+python main.py
 ```
 
-Saat ini terdapat **16 unit test** yang mencakup modul homograph detection, punycode detection, typosquatting check, dan scoring engine.
+Contoh sesi:
+
+```
+==================================================
+Homograph Detector v1
+==================================================
+
+Input URL : http://xn--pypal-4ve.com
+
+========== RESULT ==========
+Domain : paypal.com
+Status : Suspicious
+
+Character Analysis
+----------------------------------------
+Character : p
+Unicode : U+0070
+Name : LATIN SMALL LETTER P
+----------------------------------------
+Character : а
+Unicode : U+0430
+Name : CYRILLIC SMALL LETTER A
+...
+```
 
 ---
 
 ## Struktur Proyek
 
 ```
-phisdetector/
-├── phisdetector.py          # Entry point CLI
-├── detectors/
-│   ├── homograph.py         # Deteksi karakter homoglyph
-│   ├── punycode.py          # Deteksi domain IDN/punycode
-│   └── typosquatting.py     # Deteksi kemiripan domain
-├── scoring.py                # Logika risk scoring (0-100)
-├── tests/
-│   └── test_detectors.py    # Unit test
-├── requirements.txt
+PishDetector/
+├── main.py          # Entry point CLI — alur input, validasi, analisis, output
+├── validator.py      # Validasi format URL
+├── parser.py         # Ekstraksi domain + decode punycode
+├── detector.py        # Analisis karakter & penentuan status Safe/Suspicious
+├── report.py          # Format tampilan hasil ke terminal
 └── README.md
 ```
-
-> Sesuaikan struktur di atas dengan struktur folder repo asli kamu.
 
 ---
 
 ## Roadmap
 
-- [x] Engine deteksi berbasis CLI
-- [x] Sistem risk scoring 0–100
-- [x] Unit testing (16 test)
-- [ ] Integrasi backend **FastAPI**
+- [x] CLI dasar: validasi URL → ekstraksi domain → analisis karakter → laporan
+- [x] Deteksi punycode/IDN
+- [x] Deteksi karakter non-ASCII sederhana
+- [ ] Homoglyph/confusables detection yang lebih presisi (bukan sekadar cek `ord(char) > 127`)
+- [ ] Typosquatting check (kemiripan dengan domain populer)
+- [ ] Sistem skor risiko (0–100) sebagai pengganti status biner Safe/Suspicious
+- [ ] Unit test (pytest)
+- [ ] `requirements.txt`
+- [ ] Integrasi backend FastAPI
 - [ ] Integrasi reputation API (VirusTotal, Google Safe Browsing)
-- [ ] Dashboard web sederhana untuk hasil scan
 
 ---
 
-## 👤 Kontak
-
+## Kontak
 **I Putu Willy Nugraha**
-📧 wllygrh@gmail.com
 🔗 [linkedin.com/in/willy-nugraha](https://linkedin.com/in/willy-nugraha)
